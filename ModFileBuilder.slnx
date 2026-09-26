@@ -2,4 +2,5 @@
   <Project Path="ModFileBuilder.Checks/ModFileBuilder.Checks.csproj" />
   <Project Path="ModFileBuilder.Core/ModFileBuilder.Core.csproj" />
   <Project Path="ModFileBuilder.Web/ModFileBuilder.Web.csproj" />
+  <Project Path="ModFileBuilder.Windows/ModFileBuilder.Windows.csproj" />
 </Solution>

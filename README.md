@@ -12,6 +12,19 @@ dotnet run --project ModFileBuilder.Web --urls http://localhost:5080
 
 Open http://localhost:5080. Choose a format, enter equipment data, add modifications, review/edit/reorder the list, and download the file. Download contains only saved list entries. Session data is lost on refresh or server restart; download before leaving.
 
+## Windows desktop
+
+On Windows, run `dotnet run --project ModFileBuilder.Windows`. The desktop window hosts the same builder in WebView2, starts and stops its local service with the window, and uses the Windows 11 Desktop Acrylic backdrop. Windows 11 build 22621 or later supplies Acrylic; earlier Windows versions open the same desktop app without the system backdrop. The WebView2 Evergreen Runtime must be installed.
+
+To publish a self-contained Windows desktop folder, publish the web service first, then the desktop shell into the same output directory:
+
+```sh
+dotnet publish ModFileBuilder.Web -c Release -r win-x64 --self-contained true -o ./publish/windows
+dotnet publish ModFileBuilder.Windows -c Release -r win-x64 --self-contained true -o ./publish/windows
+```
+
+Run `ModFileBuilder.Windows.exe`. Keep `ModFileBuilder.Web.exe` and its published files beside it; the desktop shell starts that local service automatically.
+
 ## Publish a self-contained app
 
 To distribute a runnable copy without requiring the .NET runtime to be installed on the target machine, publish for that machine's operating system and CPU architecture. For example:

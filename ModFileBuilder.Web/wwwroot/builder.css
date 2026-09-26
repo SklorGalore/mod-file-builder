@@ -34,3 +34,14 @@ html[data-theme="dark"] .validation{background:#3a2528;color:#ffb4b8}
 html[data-theme="dark"] .theme-toggle{border-color:#49515e}
 html[data-theme="dark"] input[type="checkbox"]{accent-color:#60a5e8}
 @media(max-width:600px){.theme-toggle{margin-left:auto;padding:6px 8px}.theme-toggle span:last-child{display:none}}
+
+/* The Windows host supplies the backdrop through WebView2's transparent surface. */
+html[data-desktop="true"],html[data-desktop="true"] body{background:transparent!important}
+html[data-desktop="true"] .app-header,
+html[data-desktop="true"] .card{background:rgba(255,255,255,.72);backdrop-filter:blur(28px) saturate(145%);-webkit-backdrop-filter:blur(28px) saturate(145%)}
+html[data-desktop="true"] .app-header{border-color:#ffffff80}
+html[data-desktop="true"] .card{border-color:#ffffff8c;box-shadow:0 10px 34px #20334a12}
+html[data-desktop="true"] main{padding-top:32px}
+html[data-desktop="true"][data-theme="dark"] .app-header,
+html[data-desktop="true"][data-theme="dark"] .card{background:rgba(25,31,40,.72);border-color:#ffffff20}
+html[data-desktop="true"][data-theme="dark"] .card{box-shadow:0 10px 34px #0003}

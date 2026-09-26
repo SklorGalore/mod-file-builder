@@ -5,6 +5,14 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <base href="/" />
+    <script>
+        try {
+            const savedTheme = localStorage.getItem('mod-file-builder-theme');
+            if (savedTheme === 'dark' || (savedTheme === null && matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.dataset.theme = 'dark';
+            }
+        } catch { }
+    </script>
     <ResourcePreloader />
     <link href="_content/Microsoft.FluentUI.AspNetCore.Components/Microsoft.FluentUI.AspNetCore.Components.bundle.scp.css" rel="stylesheet" />
     <link rel="stylesheet" href="@Assets["app.css"]" />

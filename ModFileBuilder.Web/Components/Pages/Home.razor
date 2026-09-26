@@ -3,7 +3,7 @@
 @rendermode InteractiveServer
 @inject IJSRuntime JS
 <PageTitle>Case modification builder</PageTitle>
-<header class="app-header"><span class="brand-mark">ϟ</span><strong>Case modification builder</strong><span class="product-label">PSS®E WORKSPACE</span></header>
+<header class="app-header"><span class="brand-mark">ϟ</span><strong>Case modification builder</strong><span class="product-label">PSS®E WORKSPACE</span><button class="theme-toggle" type="button" @onclick="ToggleTheme" aria-label="@(darkMode ? "Switch to light mode" : "Switch to dark mode")" aria-pressed="@darkMode"><span aria-hidden="true">@(darkMode ? "☀" : "☾")</span><span>@(darkMode ? "Light mode" : "Dark mode")</span></button></header>
 <main>
     <div class="heading"><div><div class="eyebrow">BUILD YOUR NEXT CASE</div><h1>Small changes. Ready to run.</h1><p>Turn equipment data into a clean, ordered modification file.</p></div><span class="badge">Local workspace</span></div>
     <section class="card file-bar" aria-label="Output settings">
@@ -47,6 +47,7 @@
     <div role="status" class="status">@message</div><footer>Built for deliberate case changes.<span>5 equipment types · Python &amp; IDV export</span></footer>
 </main>
 @code {
+    private bool darkMode;
     private bool python = true;
     private bool includePsspy = true;
     private bool checkIerr = true;
@@ -59,6 +60,17 @@
     private string message = "Changes stay in this session. Download before closing or refreshing.";
     private string SafeName { get { var name = new string(fileName.Where(c => char.IsAsciiLetterOrDigit(c) || c is '_' or '-').ToArray()); return name.Length == 0 ? "case_modifications" : name; } }
     private string Output => CommandWriter.Export(entries, python, new ExportOptions(includePsspy, checkIerr, defineDefaults));
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+        darkMode = await JS.InvokeAsync<bool>("modBuilder.getDarkMode");
+        StateHasChanged();
+    }
+    private async Task ToggleTheme()
+    {
+        darkMode = !darkMode;
+        await JS.InvokeVoidAsync("modBuilder.setDarkMode", darkMode);
+    }
     private void ChangeType(ChangeEventArgs e) { draft = Modification.Create(e.Value?.ToString() ?? "bus"); errors.Clear(); }
     private void Save() { errors = draft.Validate(); if (errors.Count > 0) return; if (editIndex is int i) entries[i] = draft.Copy(); else entries.Add(draft.Copy()); message = "Modification saved to the list. Download when finished."; Reset(); }
     private void Reset() { draft = Modification.Create(draft.TypeKey); editIndex = null; errors.Clear(); }

@@ -2,3 +2,7 @@
 **/obj/
 .DS_Store
 .vs/
+
+# Local PSS/E cases and vendor reference material
+_ref/*.RAW
+_ref/API.pdf

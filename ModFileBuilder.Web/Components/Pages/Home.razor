@@ -1,0 +1,58 @@
+﻿@page "/"
+
+@rendermode InteractiveServer
+@inject IJSRuntime JS
+<PageTitle>Case modification builder</PageTitle>
+<header class="app-header"><span class="brand-mark">ϟ</span><strong>Case modification builder</strong><span class="product-label">PSS®E WORKSPACE</span></header>
+<main>
+    <div class="heading"><div><div class="eyebrow">BUILD YOUR NEXT CASE</div><h1>Small changes. Ready to run.</h1><p>Turn equipment data into a clean, ordered modification file.</p></div><span class="badge">Local workspace</span></div>
+    <section class="card file-bar" aria-label="Output settings">
+        <div><label for="filename">File name</label><div class="file-name"><input id="filename" @bind="fileName" maxlength="80" /><span>@(python ? ".py" : ".idv")</span></div></div>
+        <div><label>Output format</label><div class="format-switch" role="group" aria-label="Output format"><button class="@(python ? "selected" : "")" @onclick="() => python = true" aria-pressed="@python">Python <small>.py</small></button><button class="@(!python ? "selected" : "")" @onclick="() => python = false" aria-pressed="@(!python)">PSS®E batch <small>.idv</small></button></div></div>
+        <FluentButton Appearance="ButtonAppearance.Primary" Disabled="@(entries.Count == 0 || editIndex is not null)" OnClick="Download">Download file ↓</FluentButton>
+    </section>
+    <div class="workspace">
+        <section class="card editor">
+            <div class="section-heading"><div><span class="step">01</span><h2>@(editIndex is null ? "Add equipment" : "Edit equipment")</h2></div><span class="muted">* Required</span></div>
+            <label for="equipment">Equipment type</label><select id="equipment" value="@draft.TypeKey" @onchange="ChangeType">@foreach(var type in Catalog.Types) { <option value="@type.Key">@type.Name</option> }</select>
+            <p class="help">@draft.Type.Description</p><div class="info">Leave optional fields blank for PSS®E defaults. Existing data is retained where the API supports it.</div>
+            @if (errors.Count > 0) { <div class="validation" role="alert"><strong>Check these fields</strong><ul>@foreach (var error in errors) { <li>@error</li> }</ul></div> }
+            @foreach (var group in draft.Type.Fields.GroupBy(f => f.Group))
+            {
+                <fieldset><legend>@group.Key</legend><div class="field-grid">
+                @foreach (var field in group)
+                {
+                    <div class="field"><label for="@field.Key">@field.Label @(field.Required ? "*" : "")</label><input id="@field.Key" type="text" inputmode="@(field.Kind == "text" ? "text" : "decimal")" maxlength="@(field.Kind == "text" ? field.MaxLength : 40)" value="@draft.Get(field.Key)" @oninput="e => draft.Values[field.Key] = e.Value?.ToString() ?? string.Empty" placeholder="@(field.Required ? "Required" : "Default")" /></div>
+                }
+                </div></fieldset>
+            }
+            <div class="editor-actions"><FluentButton Appearance="ButtonAppearance.Primary" OnClick="Save">@(editIndex is null ? "+ Add to file" : "Save changes")</FluentButton><FluentButton OnClick="Reset">@(editIndex is null ? "Reset fields" : "Cancel edit")</FluentButton></div>
+        </section>
+        <div class="right-column">
+            <section class="card queue"><div class="section-heading"><div><span class="step">02</span><h2>Modification list</h2></div><span class="count">@entries.Count</span></div><p class="help">Commands run from top to bottom. Add buses before connected equipment.</p>
+                @if (entries.Count == 0) { <div class="empty"><span aria-hidden="true">≡</span><h3>Your changes start here</h3><p>Choose equipment, enter its data, and add it to the file.</p></div> }
+                else { <ol class="entry-list">@for (var i = 0; i < entries.Count; i++) { var index = i; var entry = entries[i]; <li class="@(editIndex == i ? "editing" : "")"><span class="entry-number">@((i + 1).ToString("00"))</span><div class="entry-info"><strong>@entry.Summary</strong><code>@entry.Type.Api</code></div><div class="row-actions"><button aria-label="Move @(entry.Summary) up" disabled="@(i == 0 || editIndex is not null)" @onclick="() => Move(index, -1)">↑</button><button aria-label="Move @(entry.Summary) down" disabled="@(i == entries.Count - 1 || editIndex is not null)" @onclick="() => Move(index, 1)">↓</button><button @onclick="() => Edit(index)" disabled="@(editIndex is not null)">Edit</button><button aria-label="Remove @(entry.Summary)" disabled="@(editIndex is not null)" @onclick="() => Remove(index)">×</button></div></li> }</ol> }
+            </section>
+            <section class="card preview"><div class="section-heading"><div><span class="step">03</span><h2>File preview</h2></div><span class="badge">@(python ? "PYTHON" : "IDV / BAT")</span></div><div class="code-title"><span>@SafeName@(python ? ".py" : ".idv")</span><span>@entries.Count commands</span></div><pre tabindex="0" aria-label="Generated file preview"><code>@(entries.Count == 0 ? (python ? "# Your generated commands will appear here." : "Your generated BAT commands will appear here.") : Output)</code></pre><p class="preview-note">Run with a case already loaded in a compatible PSS®E environment. Review before applying.</p></section>
+        </div>
+    </div>
+    <div role="status" class="status">@message</div><footer>Built for deliberate case changes.<span>5 equipment types · Python &amp; IDV export</span></footer>
+</main>
+@code {
+    private bool python = true;
+    private string fileName = "case_modifications";
+    private List<Modification> entries = [];
+    private Modification draft = Modification.Create("bus");
+    private int? editIndex;
+    private List<string> errors = [];
+    private string message = "Changes stay in this session. Download before closing or refreshing.";
+    private string SafeName { get { var name = new string(fileName.Where(c => char.IsAsciiLetterOrDigit(c) || c is '_' or '-').ToArray()); return name.Length == 0 ? "case_modifications" : name; } }
+    private string Output => CommandWriter.Export(entries, python);
+    private void ChangeType(ChangeEventArgs e) { draft = Modification.Create(e.Value?.ToString() ?? "bus"); errors.Clear(); }
+    private void Save() { errors = draft.Validate(); if (errors.Count > 0) return; if (editIndex is int i) entries[i] = draft.Copy(); else entries.Add(draft.Copy()); message = "Modification saved to the list. Download when finished."; Reset(); }
+    private void Reset() { draft = Modification.Create(draft.TypeKey); editIndex = null; errors.Clear(); }
+    private void Edit(int index) { editIndex = index; draft = entries[index].Copy(); errors.Clear(); }
+    private void Remove(int index) { entries.RemoveAt(index); message = "Modification removed."; }
+    private void Move(int index, int direction) { var other = index + direction; (entries[index], entries[other]) = (entries[other], entries[index]); }
+    private async Task Download() { try { await JS.InvokeVoidAsync("modBuilder.download", SafeName + (python ? ".py" : ".idv"), Output); message = "Download requested. Your list remains available for editing."; } catch (JSException) { message = "Download failed. Please try again."; } }
+}

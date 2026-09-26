@@ -5,6 +5,7 @@ namespace ModFileBuilder.Core;
 
 public record Field(string Key, string Label, string Group, string Kind = "real", bool Required = false, int MaxLength = 0);
 public record EquipmentType(string Key, string Name, string Api, string Description, Field[] Fields);
+public record ExportOptions(bool ImportPsspy = true, bool CheckIerr = true, bool DefineDefaults = true);
 
 public static class Catalog
 {
@@ -87,7 +88,7 @@ public static class CommandWriter
     {
         var errors = m.Validate();
         if (errors.Count > 0) throw new ArgumentException(string.Join(" ", errors));
-        if (!python) return "BAT_" + m.Type.Api.ToUpperInvariant() + ", " + string.Join(", ", m.Type.Fields.Select(f => Value(m, f, false))) + ";";
+        if (!python) return "BAT_" + m.Type.Api.ToUpperInvariant() + "," + string.Join(",", m.Type.Fields.Select(f => Value(m, f, false))) + ";";
         List<string> args = [];
         foreach (var group in m.Type.Fields.GroupBy(f => f.Group))
         {
@@ -95,11 +96,23 @@ public static class CommandWriter
             if (group.Key is "Identifiers" or "Text") args.AddRange(values);
             else args.Add("[" + string.Join(", ", values) + "]");
         }
-        return $"ierr = psspy.{m.Type.Api}({string.Join(", ", args)})\nif ierr:\n    raise RuntimeError(\"{m.Type.Api} failed: {{}}\".format(ierr))";
+        return $"ierr = psspy.{m.Type.Api}({string.Join(", ", args)})";
     }
-    public static string Export(IEnumerable<Modification> entries, bool python)
+    public static string Export(IEnumerable<Modification> entries, bool python, ExportOptions? options = null)
     {
-        var header = python ? "# PSS/E case modifications — run with a case already loaded.\nimport psspy\n\n_i = psspy.getdefaultint()\n_f = psspy.getdefaultreal()\n_s = psspy.getdefaultchar()\n\n" : "";
-        return header + string.Join("\n\n", entries.Select(m => Command(m, python))) + "\n";
+        options ??= new ExportOptions();
+        if (!python) return string.Join("\n", entries.Select(m => Command(m, false))) + "\n";
+
+        var header = "# PSS/E case modifications — run with a case already loaded.\n";
+        if (options.ImportPsspy) header += "import psspy\n";
+        if (options.DefineDefaults) header += "\n_i = psspy.getdefaultint()\n_f = psspy.getdefaultreal()\n_s = psspy.getdefaultchar()\n";
+        if (options.ImportPsspy || options.DefineDefaults) header += "\n";
+        var commands = entries.Select(m =>
+        {
+            var command = Command(m, true);
+            if (!options.CheckIerr) return command.Replace("ierr = ", "", StringComparison.Ordinal);
+            return command + $"\nif ierr:\n    raise RuntimeError(\"{m.Type.Api} failed: {{}}\".format(ierr))";
+        });
+        return header + string.Join("\n\n", commands) + "\n";
     }
 }

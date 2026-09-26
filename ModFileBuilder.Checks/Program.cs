@@ -9,7 +9,7 @@ shunt.Values["status"] = "1";
 shunt.Values["Real data0"] = "0";
 shunt.Values["Real data1"] = "25.5";
 CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo("de-DE");
-Check(CommandWriter.Command(shunt, false) == "BAT_SHUNT_DATA, 101, '1', 1, 0, 25.5;", "IDV parameter order, quoting, invariant decimals and termination");
+Check(CommandWriter.Command(shunt, false) == "BAT_SHUNT_DATA,101,'1',1,0,25.5;", "IDV parameter order, quoting, invariant decimals and termination");
 Check(CommandWriter.Command(shunt, true).StartsWith("ierr = psspy.shunt_data(101, \"1\", [1], [0, 25.5])"), "Python scalar identifiers and arrays");
 var bus = Modification.Create("bus");
 bus.Values["bus"] = "102";

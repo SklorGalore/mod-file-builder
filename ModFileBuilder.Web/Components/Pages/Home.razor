@@ -9,6 +9,14 @@
     <section class="card file-bar" aria-label="Output settings">
         <div><label for="filename">File name</label><div class="file-name"><input id="filename" @bind="fileName" maxlength="80" /><span>@(python ? ".py" : ".idv")</span></div></div>
         <div><label>Output format</label><div class="format-switch" role="group" aria-label="Output format"><button class="@(python ? "selected" : "")" @onclick="() => python = true" aria-pressed="@python">Python <small>.py</small></button><button class="@(!python ? "selected" : "")" @onclick="() => python = false" aria-pressed="@(!python)">PSS®E batch <small>.idv</small></button></div></div>
+        @if (python)
+        {
+            <fieldset class="export-options"><legend>Python options</legend>
+                <label><input type="checkbox" @bind="includePsspy" /> Import <code>psspy</code></label>
+                <label><input type="checkbox" @bind="checkIerr" /> Stop on API errors (<code>ierr</code>)</label>
+                <label><input type="checkbox" @bind="defineDefaults" /> Define default variables</label>
+            </fieldset>
+        }
         <FluentButton Appearance="ButtonAppearance.Primary" Disabled="@(entries.Count == 0 || editIndex is not null)" OnClick="Download">Download file ↓</FluentButton>
     </section>
     <div class="workspace">
@@ -40,6 +48,9 @@
 </main>
 @code {
     private bool python = true;
+    private bool includePsspy = true;
+    private bool checkIerr = true;
+    private bool defineDefaults = true;
     private string fileName = "case_modifications";
     private List<Modification> entries = [];
     private Modification draft = Modification.Create("bus");
@@ -47,7 +58,7 @@
     private List<string> errors = [];
     private string message = "Changes stay in this session. Download before closing or refreshing.";
     private string SafeName { get { var name = new string(fileName.Where(c => char.IsAsciiLetterOrDigit(c) || c is '_' or '-').ToArray()); return name.Length == 0 ? "case_modifications" : name; } }
-    private string Output => CommandWriter.Export(entries, python);
+    private string Output => CommandWriter.Export(entries, python, new ExportOptions(includePsspy, checkIerr, defineDefaults));
     private void ChangeType(ChangeEventArgs e) { draft = Modification.Create(e.Value?.ToString() ?? "bus"); errors.Clear(); }
     private void Save() { errors = draft.Validate(); if (errors.Count > 0) return; if (editIndex is int i) entries[i] = draft.Copy(); else entries.Add(draft.Copy()); message = "Modification saved to the list. Download when finished."; Reset(); }
     private void Reset() { draft = Modification.Create(draft.TypeKey); editIndex = null; errors.Clear(); }

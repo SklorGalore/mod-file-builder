@@ -47,7 +47,10 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: windows-x64-velopack
-          path: publish/velopack/*
+          path: |
+            publish/velopack/*
+            !publish/velopack/assets.win.json
+            !publish/velopack/RELEASES
           if-no-files-found: error
 
   publish:

@@ -67,6 +67,10 @@ dotnet run --project tests/ModFileBuilder.Mac.Checks
 
 The headless Avalonia checks exercise validation, placeholders, status selection, editing/canceling, queue order, format switching, and per-entry policies without opening a desktop window. The core check runner covers parameter positions, defaults, formatting under a non-English culture, input rejection, queue copy isolation, export order, and per-entry error handling. Windows UI execution requires Windows; macOS UI execution requires macOS. Actual PSS®E execution requires a licensed installation and has not been validated here.
 
+## GitHub Actions
+
+Pull requests and pushes to `main` build the solution and run both check runners. Push a version tag such as `v1.0.0` to create a GitHub Release with self-contained downloads for Windows x64, macOS Apple Silicon, and macOS Intel. The same release workflow can be run manually for an existing tag from the Actions tab.
+
 ## Repository layout
 
 - `src/ModFileBuilder.Core`: shared equipment schemas, validation, and export generation.

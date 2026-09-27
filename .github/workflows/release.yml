@@ -1,0 +1,101 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing version tag to package and release
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  windows:
+    name: Package Windows x64
+    runs-on: windows-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag || github.ref }}
+
+      - name: Set up .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Publish self-contained app
+        run: dotnet publish src/ModFileBuilder.Windows/ModFileBuilder.Windows.csproj --configuration Release --runtime win-x64 --self-contained true --output publish/windows-x64
+
+      - name: Create archive
+        run: Compress-Archive -Path publish/windows-x64/* -DestinationPath case-modification-builder-windows-x64.zip
+        shell: pwsh
+
+      - name: Upload release asset
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-x64
+          path: case-modification-builder-windows-x64.zip
+          if-no-files-found: error
+
+  macos:
+    name: Package macOS ${{ matrix.arch }}
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: arm64
+            runtime: osx-arm64
+            runner: macos-15
+          - arch: x64
+            runtime: osx-x64
+            runner: macos-15-intel
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag || github.ref }}
+
+      - name: Set up .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Publish signed app bundle
+        run: bash scripts/publish-mac.sh ${{ matrix.runtime }}
+
+      - name: Create archive
+        run: ditto -c -k --sequesterRsrc --keepParent "publish/${{ matrix.runtime }}/Case Modification Builder.app" "case-modification-builder-macos-${{ matrix.arch }}.zip"
+
+      - name: Upload release asset
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-${{ matrix.arch }}
+          path: case-modification-builder-macos-${{ matrix.arch }}.zip
+          if-no-files-found: error
+
+  publish:
+    name: Create GitHub release
+    needs: [windows, macos]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download packaged apps
+        uses: actions/download-artifact@v4
+        with:
+          path: release-assets
+          merge-multiple: true
+
+      - name: Create release and attach assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
+        run: gh release create "$RELEASE_TAG" release-assets/* --generate-notes --verify-tag

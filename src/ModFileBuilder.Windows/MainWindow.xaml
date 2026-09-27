@@ -47,6 +47,40 @@
             <Setter Property="Padding" Value="8,5" /><Setter Property="MinHeight" Value="36" />
             <Setter Property="Foreground" Value="{DynamicResource InkBrush}" /><Setter Property="Background" Value="{DynamicResource ControlBrush}" />
             <Setter Property="BorderBrush" Value="{DynamicResource LineBrush}" /><Setter Property="FontFamily" Value="Segoe UI Variable Text, Segoe UI" />
+            <Setter Property="ItemContainerStyle"><Setter.Value><Style TargetType="ComboBoxItem">
+                <Setter Property="Padding" Value="10,8" /><Setter Property="Foreground" Value="{DynamicResource InkBrush}" />
+                <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="ComboBoxItem">
+                    <Border x:Name="ItemChrome" Background="Transparent" CornerRadius="5" Padding="{TemplateBinding Padding}"><ContentPresenter /></Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsHighlighted" Value="True"><Setter TargetName="ItemChrome" Property="Background" Value="#2879B8F2" /></Trigger>
+                        <Trigger Property="IsSelected" Value="True"><Setter TargetName="ItemChrome" Property="Background" Value="#2879B8F2" /></Trigger>
+                        <Trigger Property="IsEnabled" Value="False"><Setter Property="Opacity" Value="0.5" /></Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate></Setter.Value></Setter>
+            </Style></Setter.Value></Setter>
+            <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="ComboBox">
+                <Grid>
+                    <Border x:Name="Chrome" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1" CornerRadius="6" />
+                    <ToggleButton x:Name="DropDownToggle" Focusable="False" ClickMode="Press" IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}" Background="Transparent" BorderThickness="0">
+                        <ToggleButton.Template><ControlTemplate TargetType="ToggleButton"><Border Background="{TemplateBinding Background}" CornerRadius="6" /></ControlTemplate></ToggleButton.Template>
+                    </ToggleButton>
+                    <ContentPresenter IsHitTestVisible="False" Content="{TemplateBinding SelectionBoxItem}" ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}" ContentStringFormat="{TemplateBinding SelectionBoxItemStringFormat}" Margin="12,0,38,0" VerticalAlignment="Center" />
+                    <Path Data="M 0 0 L 4 4 L 8 0" Stroke="{DynamicResource HintBrush}" StrokeThickness="1.6" StrokeStartLineCap="Round" StrokeEndLineCap="Round" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,14,0" IsHitTestVisible="False" />
+                    <Popup x:Name="PART_Popup" Placement="Bottom" PlacementTarget="{Binding RelativeSource={RelativeSource TemplatedParent}}" IsOpen="{TemplateBinding IsDropDownOpen}" AllowsTransparency="True" Focusable="False" PopupAnimation="Fade">
+                        <Border Background="{DynamicResource ControlBrush}" BorderBrush="{DynamicResource LineBrush}" BorderThickness="1" CornerRadius="8" Padding="4" MinWidth="{Binding PlacementTarget.ActualWidth, RelativeSource={RelativeSource AncestorType=Popup}}" Margin="0,4,0,0">
+                            <ScrollViewer MaxHeight="{TemplateBinding MaxDropDownHeight}" SnapsToDevicePixels="True" CanContentScroll="True">
+                                <ItemsPresenter KeyboardNavigation.DirectionalNavigation="Contained" />
+                            </ScrollViewer>
+                        </Border>
+                    </Popup>
+                </Grid>
+                <ControlTemplate.Triggers>
+                    <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Chrome" Property="BorderBrush" Value="{DynamicResource AccentBrush}" /></Trigger>
+                    <Trigger Property="IsKeyboardFocusWithin" Value="True"><Setter TargetName="Chrome" Property="BorderBrush" Value="{DynamicResource AccentBrush}" /><Setter TargetName="Chrome" Property="BorderThickness" Value="2" /></Trigger>
+                    <Trigger Property="IsEnabled" Value="False"><Setter TargetName="Chrome" Property="Opacity" Value="0.5" /></Trigger>
+                </ControlTemplate.Triggers>
+            </ControlTemplate></Setter.Value></Setter>
         </Style>
         <Style TargetType="CheckBox"><Setter Property="Margin" Value="0,8,18,8" /><Setter Property="Foreground" Value="{DynamicResource InkBrush}" /><Setter Property="FontFamily" Value="Segoe UI Variable Text, Segoe UI" /></Style>
         <Style TargetType="ListBox"><Setter Property="Background" Value="Transparent" /><Setter Property="BorderThickness" Value="0" /><Setter Property="Foreground" Value="{DynamicResource InkBrush}" /><Setter Property="Padding" Value="0,4" /></Style>
@@ -137,15 +171,30 @@
                                 <Button x:Name="EditButton" Content="Edit" Click="EditEntry" />
                                 <Button x:Name="RemoveButton" Content="Remove" Click="RemoveEntry" />
                             </StackPanel>
-                            <ListBox x:Name="EntryList" SelectionChanged="SelectionChanged" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
-                                <ListBox.ItemTemplate><DataTemplate><StackPanel Margin="4"><TextBlock Text="{Binding Summary}" FontWeight="SemiBold" /><TextBlock Text="{Binding Type.Api}" Foreground="{DynamicResource HintBrush}" FontSize="11" /></StackPanel></DataTemplate></ListBox.ItemTemplate>
-                            </ListBox>
+                            <Grid>
+                                <ListBox x:Name="EntryList" SelectionChanged="SelectionChanged" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                                    <ListBox.ItemTemplate><DataTemplate><StackPanel Margin="4"><TextBlock Text="{Binding Summary}" FontWeight="SemiBold" /><TextBlock Text="{Binding Type.Api}" Foreground="{DynamicResource HintBrush}" FontSize="11" /></StackPanel></DataTemplate></ListBox.ItemTemplate>
+                                </ListBox>
+                                <StackPanel x:Name="EmptyListState" HorizontalAlignment="Center" VerticalAlignment="Center" MaxWidth="300" Margin="24" IsHitTestVisible="False">
+                                    <Border Width="44" Height="44" CornerRadius="22" Background="#2679B8F2" HorizontalAlignment="Center" Margin="0,0,0,14">
+                                        <TextBlock Text="+" Foreground="{DynamicResource AccentBrush}" FontSize="28" FontWeight="Light" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,-3,0,0" />
+                                    </Border>
+                                    <TextBlock Text="Your list is empty" FontSize="15" FontWeight="SemiBold" HorizontalAlignment="Center" />
+                                    <TextBlock Text="Choose an equipment type, fill in its details, then select Add to file." TextWrapping="Wrap" TextAlignment="Center" Foreground="{DynamicResource HintBrush}" Margin="0,6,0,0" />
+                                </StackPanel>
+                            </Grid>
                         </DockPanel>
                     </Border>
                     <Border Grid.Row="2" Style="{StaticResource Card}">
                         <DockPanel>
                             <TextBlock Text="File preview" DockPanel.Dock="Top" Style="{StaticResource SectionTitle}" Margin="0,0,0,12" />
-                            <TextBox x:Name="PreviewText" IsReadOnly="True" Background="#A8181D25" Foreground="#FFE7EDF5" BorderBrush="#507D8998" FontFamily="Cascadia Mono, Consolas" FontSize="12" AcceptsReturn="True" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" />
+                            <Grid>
+                                <TextBox x:Name="PreviewText" IsReadOnly="True" Background="#A8181D25" Foreground="#FFE7EDF5" BorderBrush="#507D8998" FontFamily="Cascadia Mono, Consolas" FontSize="12" AcceptsReturn="True" VerticalContentAlignment="Top" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" />
+                                <StackPanel x:Name="EmptyPreviewState" HorizontalAlignment="Center" VerticalAlignment="Center" IsHitTestVisible="False" Margin="16">
+                                    <TextBlock Text="Your preview will appear here" Foreground="#FFE7EDF5" FontWeight="SemiBold" FontSize="14" HorizontalAlignment="Center" />
+                                    <TextBlock Text="Add an item to see the generated commands." Foreground="#FFAEB7C3" FontSize="12" HorizontalAlignment="Center" Margin="0,6,0,0" />
+                                </StackPanel>
+                            </Grid>
                         </DockPanel>
                     </Border>
                 </Grid>

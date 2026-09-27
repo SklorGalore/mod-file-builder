@@ -217,7 +217,9 @@ public partial class MainWindow : Window
     private void RefreshOutput()
     {
         PythonOptions.Visibility = EntryPythonOptions.Visibility = Python ? Visibility.Visible : Visibility.Collapsed;
-        PreviewText.Text = entries.Count == 0 ? "Your generated commands will appear here." : Output;
+        PreviewText.Text = entries.Count == 0 ? "" : Output;
+        EmptyListState.Visibility = entries.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+        EmptyPreviewState.Visibility = entries.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
         QueueTitle.Text = $"Modification list ({entries.Count})";
         RefreshActions();
     }

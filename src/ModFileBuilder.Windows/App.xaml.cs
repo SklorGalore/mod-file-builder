@@ -32,7 +32,7 @@ public partial class App : Application
     {
         try
         {
-            var manager = new UpdateManager(new GithubSource(RepositoryUrl));
+            var manager = new UpdateManager(new GithubSource(RepositoryUrl, accessToken: null, prerelease: false));
             if (!manager.IsInstalled) return;
 
             var update = await manager.CheckForUpdatesAsync();

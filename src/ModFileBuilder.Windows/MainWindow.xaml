@@ -2,99 +2,154 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Case modification builder" Width="1440" Height="960" MinWidth="900" MinHeight="640"
-        Background="{DynamicResource PageBrush}" Foreground="{DynamicResource InkBrush}" Closing="OnClosing">
+        Background="Transparent" Foreground="{DynamicResource InkBrush}" Closing="OnClosing" SourceInitialized="OnSourceInitialized">
     <Window.Resources>
-        <SolidColorBrush x:Key="PageBrush" Color="#F5F6F8" />
-        <SolidColorBrush x:Key="CardBrush" Color="White" />
-        <SolidColorBrush x:Key="InkBrush" Color="#242424" />
-        <SolidColorBrush x:Key="HintBrush" Color="#707782" />
-        <Style TargetType="TextBlock"><Setter Property="Foreground" Value="{DynamicResource InkBrush}" /></Style>
-        <Style TargetType="Button"><Setter Property="Padding" Value="12,7" /><Setter Property="Margin" Value="0,0,8,0" /></Style>
-        <Style TargetType="TextBox"><Setter Property="Padding" Value="8,6" /><Setter Property="VerticalContentAlignment" Value="Center" /></Style>
-        <Style TargetType="ComboBox"><Setter Property="Padding" Value="8,6" /><Setter Property="MinHeight" Value="32" /></Style>
-        <Style TargetType="CheckBox"><Setter Property="Margin" Value="0,8,16,8" /><Setter Property="Foreground" Value="{DynamicResource InkBrush}" /></Style>
-        <Style x:Key="Card" TargetType="Border"><Setter Property="Background" Value="{DynamicResource CardBrush}" /><Setter Property="CornerRadius" Value="8" /><Setter Property="Padding" Value="20" /></Style>
+        <SolidColorBrush x:Key="PageBrush" Color="#FFF3F6FA" />
+        <SolidColorBrush x:Key="AcrylicBrush" Color="#D9F3F6FA" />
+        <SolidColorBrush x:Key="CardBrush" Color="#D9FFFFFF" />
+        <SolidColorBrush x:Key="ControlBrush" Color="#CCFFFFFF" />
+        <SolidColorBrush x:Key="InkBrush" Color="#FF202631" />
+        <SolidColorBrush x:Key="HintBrush" Color="#FF5D6878" />
+        <SolidColorBrush x:Key="LineBrush" Color="#507D8998" />
+        <SolidColorBrush x:Key="AccentBrush" Color="#FF176BCE" />
+        <Style TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{DynamicResource InkBrush}" />
+            <Setter Property="FontFamily" Value="Segoe UI Variable Text, Segoe UI" />
+        </Style>
+        <Style TargetType="Button">
+            <Setter Property="Padding" Value="14,8" /><Setter Property="Margin" Value="0,0,8,0" />
+            <Setter Property="MinHeight" Value="36" /><Setter Property="Foreground" Value="{DynamicResource InkBrush}" />
+            <Setter Property="Background" Value="{DynamicResource ControlBrush}" /><Setter Property="BorderBrush" Value="{DynamicResource LineBrush}" />
+            <Setter Property="BorderThickness" Value="1" /><Setter Property="FontFamily" Value="Segoe UI Variable Text, Segoe UI" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="Button">
+                <Border x:Name="Chrome" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="6" Padding="{TemplateBinding Padding}">
+                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" RecognizesAccessKey="True" />
+                </Border>
+                <ControlTemplate.Triggers>
+                    <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Chrome" Property="Background" Value="#30FFFFFF" /><Setter TargetName="Chrome" Property="BorderBrush" Value="{DynamicResource AccentBrush}" /></Trigger>
+                    <Trigger Property="IsPressed" Value="True"><Setter TargetName="Chrome" Property="Background" Value="#507D8998" /></Trigger>
+                    <Trigger Property="IsEnabled" Value="False"><Setter TargetName="Chrome" Property="Opacity" Value="0.45" /></Trigger>
+                </ControlTemplate.Triggers>
+            </ControlTemplate></Setter.Value></Setter>
+        </Style>
+        <Style x:Key="PrimaryButton" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+            <Setter Property="Background" Value="{DynamicResource AccentBrush}" /><Setter Property="Foreground" Value="White" />
+            <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" /><Setter Property="FontWeight" Value="SemiBold" />
+        </Style>
+        <Style TargetType="TextBox">
+            <Setter Property="Padding" Value="10,7" /><Setter Property="MinHeight" Value="36" />
+            <Setter Property="VerticalContentAlignment" Value="Center" /><Setter Property="Foreground" Value="{DynamicResource InkBrush}" />
+            <Setter Property="Background" Value="{DynamicResource ControlBrush}" /><Setter Property="BorderBrush" Value="{DynamicResource LineBrush}" />
+            <Setter Property="BorderThickness" Value="1" /><Setter Property="FontFamily" Value="Segoe UI Variable Text, Segoe UI" />
+        </Style>
+        <Style TargetType="ComboBox">
+            <Setter Property="Padding" Value="8,5" /><Setter Property="MinHeight" Value="36" />
+            <Setter Property="Foreground" Value="{DynamicResource InkBrush}" /><Setter Property="Background" Value="{DynamicResource ControlBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource LineBrush}" /><Setter Property="FontFamily" Value="Segoe UI Variable Text, Segoe UI" />
+        </Style>
+        <Style TargetType="CheckBox"><Setter Property="Margin" Value="0,8,18,8" /><Setter Property="Foreground" Value="{DynamicResource InkBrush}" /><Setter Property="FontFamily" Value="Segoe UI Variable Text, Segoe UI" /></Style>
+        <Style TargetType="ListBox"><Setter Property="Background" Value="Transparent" /><Setter Property="BorderThickness" Value="0" /><Setter Property="Foreground" Value="{DynamicResource InkBrush}" /><Setter Property="Padding" Value="0,4" /></Style>
+        <Style TargetType="ListBoxItem">
+            <Setter Property="Padding" Value="8,5" /><Setter Property="Margin" Value="0,2" /><Setter Property="HorizontalContentAlignment" Value="Stretch" />
+            <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="ListBoxItem">
+                <Border x:Name="ItemChrome" Background="Transparent" CornerRadius="6" Padding="{TemplateBinding Padding}"><ContentPresenter /></Border>
+                <ControlTemplate.Triggers>
+                    <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="ItemChrome" Property="Background" Value="#187D8998" /></Trigger>
+                    <Trigger Property="IsSelected" Value="True"><Setter TargetName="ItemChrome" Property="Background" Value="#2879B8F2" /></Trigger>
+                </ControlTemplate.Triggers>
+            </ControlTemplate></Setter.Value></Setter>
+        </Style>
+        <Style x:Key="Card" TargetType="Border"><Setter Property="Background" Value="{DynamicResource CardBrush}" /><Setter Property="BorderBrush" Value="{DynamicResource LineBrush}" /><Setter Property="BorderThickness" Value="1" /><Setter Property="CornerRadius" Value="10" /><Setter Property="Padding" Value="20" /></Style>
+        <Style x:Key="SectionTitle" TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}"><Setter Property="FontSize" Value="18" /><Setter Property="FontWeight" Value="SemiBold" /></Style>
     </Window.Resources>
-    <DockPanel Margin="24">
-        <TextBlock x:Name="StatusText" DockPanel.Dock="Bottom" Margin="0,14,0,0" Text="Add equipment and save the generated file before closing." TextWrapping="Wrap" />
-        <StackPanel DockPanel.Dock="Top">
-            <DockPanel Margin="0,0,0,20">
-                <Button DockPanel.Dock="Right" Content="Toggle theme" Click="ToggleTheme" />
-                <TextBlock Text="Case modification builder" FontSize="26" FontWeight="SemiBold" />
-            </DockPanel>
-            <Border Style="{StaticResource Card}" Margin="0,0,0,20">
-                <DockPanel>
-                    <Button x:Name="ExportButton" DockPanel.Dock="Right" Content="Save file…" Click="ExportFile" VerticalAlignment="Center" />
+    <Border Background="{DynamicResource AcrylicBrush}" Padding="24">
+        <DockPanel>
+            <Border DockPanel.Dock="Bottom" Margin="0,14,0,0" Padding="12,8" Background="#36FFFFFF" CornerRadius="6">
+                <TextBlock x:Name="StatusText" Text="Add equipment and save the generated file before closing." TextWrapping="Wrap" Foreground="{DynamicResource HintBrush}" FontSize="12" />
+            </Border>
+            <StackPanel DockPanel.Dock="Top">
+                <DockPanel Margin="0,0,0,18">
+                    <Button DockPanel.Dock="Right" Content="Toggle theme" Click="ToggleTheme" Margin="8,0,0,0" />
                     <StackPanel>
-                        <TextBlock Text="Output format" Margin="0,0,0,6" />
-                        <ComboBox x:Name="FormatSelector" Width="220" HorizontalAlignment="Left" SelectedIndex="0" SelectionChanged="OutputChanged">
-                            <ComboBoxItem Content="Python (.py)" /><ComboBoxItem Content="PSS®E batch (.idv)" />
-                        </ComboBox>
-                        <StackPanel x:Name="PythonOptions" Orientation="Horizontal">
-                            <CheckBox x:Name="ImportPsspy" Content="Import psspy" IsChecked="True" Click="OutputChanged" />
-                            <CheckBox x:Name="DefineDefaults" Content="Define default variables" IsChecked="True" Click="OutputChanged" />
-                        </StackPanel>
+                        <TextBlock Text="CASE MODIFICATION BUILDER" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource AccentBrush}" />
+                        <TextBlock Text="Build a modification file" FontSize="26" FontWeight="SemiBold" Margin="0,2,0,0" />
                     </StackPanel>
                 </DockPanel>
-            </Border>
-        </StackPanel>
-        <Grid>
-            <Grid.ColumnDefinitions><ColumnDefinition Width="5*" MinWidth="330" /><ColumnDefinition Width="20" /><ColumnDefinition Width="6*" MinWidth="380" /></Grid.ColumnDefinitions>
-            <Border Style="{StaticResource Card}">
-                <DockPanel>
-                    <StackPanel DockPanel.Dock="Bottom" Margin="0,14,0,0">
-                        <TextBlock x:Name="ValidationText" Foreground="#C42B1C" TextWrapping="Wrap" Margin="0,0,0,10" />
-                        <StackPanel Orientation="Horizontal">
-                            <Button x:Name="SaveEntryButton" Content="Add to file" Click="SaveEntry" />
-                            <Button x:Name="ResetButton" Content="Reset fields" Click="ResetEditor" />
-                        </StackPanel>
-                    </StackPanel>
-                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <Border Style="{StaticResource Card}" Margin="0,0,0,18">
+                    <DockPanel>
+                        <Button x:Name="ExportButton" Style="{StaticResource PrimaryButton}" DockPanel.Dock="Right" Content="Save file…" Click="ExportFile" VerticalAlignment="Center" Margin="12,0,0,0" />
                         <StackPanel>
-                            <TextBlock x:Name="EditorTitle" Text="Add equipment" FontSize="18" FontWeight="SemiBold" Margin="0,0,0,16" />
-                            <TextBlock Text="Equipment type" Margin="0,0,0,6" />
-                            <ComboBox x:Name="EquipmentSelector" DisplayMemberPath="Name" SelectedValuePath="Key" SelectionChanged="ChangeEquipment" />
-                            <TextBlock x:Name="DescriptionText" TextWrapping="Wrap" Margin="0,12,0,8" />
-                            <TextBlock Text="* Required. Placeholders show defaults for new equipment. Blank optional fields use PSS®E defaults and retain existing data where supported. Blank node and ID use 0 and 1." TextWrapping="Wrap" Foreground="{DynamicResource HintBrush}" FontSize="12" />
-                            <StackPanel x:Name="FieldsPanel" />
-                            <StackPanel x:Name="EntryPythonOptions" Margin="0,16,0,0">
-                                <TextBlock Text="On API error (this entry)" Margin="0,0,0,6" />
-                                <ComboBox x:Name="ErrorSelector" SelectionChanged="ErrorChanged">
-                                    <ComboBoxItem Content="Raise exception (stop script)" />
-                                    <ComboBoxItem Content="Print warning to console (continue)" />
-                                    <ComboBoxItem Content="Ignore (continue)" />
-                                </ComboBox>
+                            <TextBlock Text="OUTPUT FORMAT" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource HintBrush}" Margin="0,0,0,6" />
+                            <ComboBox x:Name="FormatSelector" Width="220" HorizontalAlignment="Left" SelectedIndex="0" SelectionChanged="OutputChanged">
+                                <ComboBoxItem Content="Python (.py)" /><ComboBoxItem Content="PSS®E batch (.idv)" />
+                            </ComboBox>
+                            <StackPanel x:Name="PythonOptions" Orientation="Horizontal">
+                                <CheckBox x:Name="ImportPsspy" Content="Import psspy" IsChecked="True" Click="OutputChanged" />
+                                <CheckBox x:Name="DefineDefaults" Content="Define default variables" IsChecked="True" Click="OutputChanged" />
                             </StackPanel>
                         </StackPanel>
-                    </ScrollViewer>
-                </DockPanel>
-            </Border>
-            <Grid Grid.Column="2">
-                <Grid.RowDefinitions><RowDefinition Height="*" /><RowDefinition Height="20" /><RowDefinition Height="*" /></Grid.RowDefinitions>
+                    </DockPanel>
+                </Border>
+            </StackPanel>
+            <Grid>
+                <Grid.ColumnDefinitions><ColumnDefinition Width="5*" MinWidth="330" /><ColumnDefinition Width="16" /><ColumnDefinition Width="6*" MinWidth="380" /></Grid.ColumnDefinitions>
                 <Border Style="{StaticResource Card}">
                     <DockPanel>
-                        <StackPanel DockPanel.Dock="Top">
-                            <TextBlock x:Name="QueueTitle" Text="Modification list" FontSize="18" FontWeight="SemiBold" />
-                            <TextBlock Text="Commands run from top to bottom. Add buses before connected equipment." TextWrapping="Wrap" Margin="0,10,0,12" />
+                        <StackPanel DockPanel.Dock="Bottom" Margin="0,14,0,0">
+                            <TextBlock x:Name="ValidationText" Foreground="#FFC42B1C" TextWrapping="Wrap" Margin="0,0,0,10" />
+                            <StackPanel Orientation="Horizontal">
+                                <Button x:Name="SaveEntryButton" Style="{StaticResource PrimaryButton}" Content="Add to file" Click="SaveEntry" />
+                                <Button x:Name="ResetButton" Content="Reset fields" Click="ResetEditor" />
+                            </StackPanel>
                         </StackPanel>
-                        <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Margin="0,12,0,0">
-                            <Button x:Name="UpButton" Content="↑" ToolTip="Move selected entry up" Click="MoveUp" />
-                            <Button x:Name="DownButton" Content="↓" ToolTip="Move selected entry down" Click="MoveDown" />
-                            <Button x:Name="EditButton" Content="Edit" Click="EditEntry" />
-                            <Button x:Name="RemoveButton" Content="Remove" Click="RemoveEntry" />
-                        </StackPanel>
-                        <ListBox x:Name="EntryList" SelectionChanged="SelectionChanged" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
-                            <ListBox.ItemTemplate><DataTemplate><StackPanel Margin="6"><TextBlock Text="{Binding Summary}" Foreground="#242424" FontWeight="SemiBold" /><TextBlock Text="{Binding Type.Api}" Foreground="#707782" FontSize="11" /></StackPanel></DataTemplate></ListBox.ItemTemplate>
-                        </ListBox>
+                        <ScrollViewer VerticalScrollBarVisibility="Auto">
+                            <StackPanel>
+                                <TextBlock x:Name="EditorTitle" Text="Add equipment" Style="{StaticResource SectionTitle}" Margin="0,0,0,16" />
+                                <TextBlock Text="Equipment type" Margin="0,0,0,6" />
+                                <ComboBox x:Name="EquipmentSelector" DisplayMemberPath="Name" SelectedValuePath="Key" SelectionChanged="ChangeEquipment" />
+                                <TextBlock x:Name="DescriptionText" TextWrapping="Wrap" Margin="0,12,0,8" />
+                                <TextBlock Text="* Required. Placeholders show defaults for new equipment. Blank optional fields use PSS®E defaults and retain existing data where supported. Blank node and ID use 0 and 1." TextWrapping="Wrap" Foreground="{DynamicResource HintBrush}" FontSize="12" />
+                                <StackPanel x:Name="FieldsPanel" />
+                                <StackPanel x:Name="EntryPythonOptions" Margin="0,16,0,0">
+                                    <TextBlock Text="On API error (this entry)" Margin="0,0,0,6" />
+                                    <ComboBox x:Name="ErrorSelector" SelectionChanged="ErrorChanged">
+                                        <ComboBoxItem Content="Raise exception (stop script)" />
+                                        <ComboBoxItem Content="Print warning to console (continue)" />
+                                        <ComboBoxItem Content="Ignore (continue)" />
+                                    </ComboBox>
+                                </StackPanel>
+                            </StackPanel>
+                        </ScrollViewer>
                     </DockPanel>
                 </Border>
-                <Border Grid.Row="2" Style="{StaticResource Card}">
-                    <DockPanel>
-                        <TextBlock Text="File preview" DockPanel.Dock="Top" FontSize="18" FontWeight="SemiBold" Margin="0,0,0,12" />
-                        <TextBox x:Name="PreviewText" IsReadOnly="True" FontFamily="Consolas" FontSize="12" AcceptsReturn="True" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" />
-                    </DockPanel>
-                </Border>
+                <Grid Grid.Column="2">
+                    <Grid.RowDefinitions><RowDefinition Height="*" /><RowDefinition Height="16" /><RowDefinition Height="*" /></Grid.RowDefinitions>
+                    <Border Style="{StaticResource Card}">
+                        <DockPanel>
+                            <StackPanel DockPanel.Dock="Top">
+                                <TextBlock x:Name="QueueTitle" Text="Modification list" Style="{StaticResource SectionTitle}" />
+                                <TextBlock Text="Commands run from top to bottom. Add buses before connected equipment." TextWrapping="Wrap" Margin="0,10,0,12" Foreground="{DynamicResource HintBrush}" />
+                            </StackPanel>
+                            <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Margin="0,12,0,0">
+                                <Button x:Name="UpButton" Content="↑" ToolTip="Move selected entry up" Click="MoveUp" />
+                                <Button x:Name="DownButton" Content="↓" ToolTip="Move selected entry down" Click="MoveDown" />
+                                <Button x:Name="EditButton" Content="Edit" Click="EditEntry" />
+                                <Button x:Name="RemoveButton" Content="Remove" Click="RemoveEntry" />
+                            </StackPanel>
+                            <ListBox x:Name="EntryList" SelectionChanged="SelectionChanged" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                                <ListBox.ItemTemplate><DataTemplate><StackPanel Margin="4"><TextBlock Text="{Binding Summary}" FontWeight="SemiBold" /><TextBlock Text="{Binding Type.Api}" Foreground="{DynamicResource HintBrush}" FontSize="11" /></StackPanel></DataTemplate></ListBox.ItemTemplate>
+                            </ListBox>
+                        </DockPanel>
+                    </Border>
+                    <Border Grid.Row="2" Style="{StaticResource Card}">
+                        <DockPanel>
+                            <TextBlock Text="File preview" DockPanel.Dock="Top" Style="{StaticResource SectionTitle}" Margin="0,0,0,12" />
+                            <TextBox x:Name="PreviewText" IsReadOnly="True" Background="#A8181D25" Foreground="#FFE7EDF5" BorderBrush="#507D8998" FontFamily="Cascadia Mono, Consolas" FontSize="12" AcceptsReturn="True" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" />
+                        </DockPanel>
+                    </Border>
+                </Grid>
             </Grid>
-        </Grid>
-    </DockPanel>
+        </DockPanel>
+    </Border>
 </Window>

@@ -1,14 +1,16 @@
 using System.Collections.ObjectModel;
-using System.ComponentModel;
 using System.IO;
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Automation;
-using System.Windows.Media;
-using Microsoft.Win32;
+using Avalonia;
+using Avalonia.Automation;
+using Avalonia.Controls;
+using Avalonia.Interactivity;
+using Avalonia.Layout;
+using Avalonia.Media;
+using Avalonia.Platform.Storage;
+using Avalonia.Styling;
 using ModFileBuilder.Core;
 
-namespace ModFileBuilder.Windows;
+namespace ModFileBuilder.Mac;
 
 public partial class MainWindow : Window
 {
@@ -19,7 +21,8 @@ public partial class MainWindow : Window
     private bool loadingEditor;
     private bool unsaved;
     private bool draftChanged;
-    private bool darkMode;
+    private bool allowClose;
+    private bool confirmingClose;
     private bool Python => FormatSelector.SelectedIndex == 0;
     private string Output => CommandWriter.Export(entries, Python,
         new ExportOptions(ImportPsspy.IsChecked == true, DefineDefaults.IsChecked == true));
@@ -28,7 +31,7 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
         EntryList.ItemsSource = entries;
-        EquipmentSelector.ItemsSource = Catalog.Types;
+        EquipmentSelector.ItemsSource = Catalog.Types.Select(t => new ComboBoxItem { Content = t.Name, Tag = t.Key }).ToArray();
         ready = true;
         LoadEditor();
         RefreshOutput();
@@ -37,7 +40,7 @@ public partial class MainWindow : Window
     private void LoadEditor()
     {
         loadingEditor = true;
-        EquipmentSelector.SelectedValue = draft.TypeKey;
+        EquipmentSelector.SelectedIndex = Array.FindIndex(Catalog.Types, t => t.Key == draft.TypeKey);
         DescriptionText.Text = draft.Type.Description;
         EditorTitle.Text = editIndex is null ? "Add equipment" : "Edit equipment";
         SaveEntryButton.Content = editIndex is null ? "Add to file" : "Save changes";
@@ -48,7 +51,7 @@ public partial class MainWindow : Window
         {
             FieldsPanel.Children.Add(new TextBlock
             {
-                Text = group.Key, FontWeight = FontWeights.SemiBold,
+                Text = group.Key, FontWeight = FontWeight.SemiBold,
                 Margin = new Thickness(0, 20, 0, 10)
             });
             var grid = new Grid();
@@ -63,36 +66,29 @@ public partial class MainWindow : Window
                 panel.Children.Add(new TextBlock { Text = label, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 0, 0, 5), FontSize = 12 });
                 if (field.Key is "status" or "dg")
                 {
-                    var select = new ComboBox { SelectedValuePath = "Tag" };
+                    var select = new ComboBox();
                     select.Items.Add(new ComboBoxItem { Content = draft.Placeholder(field), Tag = "" });
                     select.Items.Add(new ComboBoxItem { Content = "On-Line", Tag = "1" });
                     select.Items.Add(new ComboBoxItem { Content = "Out-Of-Service", Tag = "0" });
-                    select.SelectedValue = draft.Get(field.Key);
-                    select.SelectionChanged += (_, _) => SetValue(field.Key, select.SelectedValue?.ToString() ?? "");
+                    select.SelectedIndex = draft.Get(field.Key) switch { "1" => 1, "0" => 2, _ => 0 };
+                    select.SelectionChanged += (_, _) => SetValue(field.Key, (select.SelectedItem as ComboBoxItem)?.Tag?.ToString() ?? "");
                     AutomationProperties.SetName(select, label);
                     panel.Children.Add(select);
                 }
                 else
                 {
-                    var input = new TextBox { Text = draft.Get(field.Key), MaxLength = field.Kind == "text" ? field.MaxLength : 40 };
+                    var input = new TextBox
+                    {
+                        Text = draft.Get(field.Key), PlaceholderText = draft.Placeholder(field),
+                        MaxLength = field.Kind == "text" ? field.MaxLength : 40
+                    };
                     AutomationProperties.SetName(input, label);
-                    var placeholder = new TextBlock
+                    ToolTip.SetTip(input, $"Default: {draft.Placeholder(field)}");
+                    input.PropertyChanged += (_, e) =>
                     {
-                        Text = draft.Placeholder(field), Foreground = Brushes.Gray,
-                        Margin = new Thickness(9, 0, 9, 0), VerticalAlignment = VerticalAlignment.Center,
-                        IsHitTestVisible = false, TextTrimming = TextTrimming.CharacterEllipsis,
-                        Visibility = input.Text.Length == 0 ? Visibility.Visible : Visibility.Collapsed
+                        if (e.Property == TextBox.TextProperty) SetValue(field.Key, input.Text ?? "");
                     };
-                    input.ToolTip = $"Default: {draft.Placeholder(field)}";
-                    input.TextChanged += (_, _) =>
-                    {
-                        placeholder.Visibility = input.Text.Length == 0 ? Visibility.Visible : Visibility.Collapsed;
-                        SetValue(field.Key, input.Text);
-                    };
-                    var overlay = new Grid();
-                    overlay.Children.Add(input);
-                    overlay.Children.Add(placeholder);
-                    panel.Children.Add(overlay);
+                    panel.Children.Add(input);
                 }
                 Grid.SetRow(panel, index / 2);
                 Grid.SetColumn(panel, index % 2);
@@ -115,7 +111,7 @@ public partial class MainWindow : Window
 
     private void ChangeEquipment(object sender, SelectionChangedEventArgs e)
     {
-        if (!ready || loadingEditor || EquipmentSelector.SelectedValue is not string key) return;
+        if (!ready || loadingEditor || EquipmentSelector.SelectedItem is not ComboBoxItem { Tag: string key }) return;
         draft = Modification.Create(key);
         LoadEditor();
     }
@@ -194,7 +190,7 @@ public partial class MainWindow : Window
 
     private void RefreshOutput()
     {
-        PythonOptions.Visibility = EntryPythonOptions.Visibility = Python ? Visibility.Visible : Visibility.Collapsed;
+        PythonOptions.IsVisible = EntryPythonOptions.IsVisible = Python;
         PreviewText.Text = entries.Count == 0 ? "Your generated commands will appear here." : Output;
         QueueTitle.Text = $"Modification list ({entries.Count})";
         RefreshActions();
@@ -210,41 +206,77 @@ public partial class MainWindow : Window
         ExportButton.IsEnabled = entries.Count > 0 && editIndex is null;
     }
 
-    private void ExportFile(object sender, RoutedEventArgs e)
+    private async void ExportFile(object? sender, RoutedEventArgs e)
     {
-        var dialog = new SaveFileDialog
-        {
-            Title = "Save case modifications", FileName = "case_modifications",
-            DefaultExt = Python ? ".py" : ".idv",
-            Filter = Python ? "Python files (*.py)|*.py" : "PSS/E batch files (*.idv)|*.idv",
-            AddExtension = true, OverwritePrompt = true
-        };
-        if (dialog.ShowDialog(this) != true) return;
+        // Capture the current output before opening the asynchronous native dialog.
+        var output = Output;
+        var python = Python;
         try
         {
-            File.WriteAllText(dialog.FileName, Output);
-            unsaved = false;
-            StatusText.Text = $"Saved {dialog.FileName}";
+            var file = await StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
+            {
+                Title = "Save case modifications", SuggestedFileName = "case_modifications" + (python ? ".py" : ".idv"),
+                DefaultExtension = python ? "py" : "idv", ShowOverwritePrompt = true,
+                FileTypeChoices = [new FilePickerFileType(python ? "Python" : "PSS/E batch")
+                {
+                    Patterns = [python ? "*.py" : "*.idv"]
+                }]
+            });
+            if (file is null) return;
+            using (file)
+            {
+                await using var stream = await file.OpenWriteAsync();
+                stream.SetLength(0);
+                await using var writer = new StreamWriter(stream);
+                await writer.WriteAsync(output);
+                await writer.FlushAsync();
+                unsaved = Output != output;
+                StatusText.Text = $"Saved {file.Name}";
+            }
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
-            MessageBox.Show(this, ex.Message, "Could not save file", MessageBoxButton.OK, MessageBoxImage.Error);
+            StatusText.Text = $"Could not save file: {ex.Message}";
         }
     }
 
-    private void ToggleTheme(object sender, RoutedEventArgs e)
+    private void ToggleTheme(object? sender, RoutedEventArgs e)
     {
-        darkMode = !darkMode;
-        Resources["PageBrush"] = new SolidColorBrush((Color)ColorConverter.ConvertFromString(darkMode ? "#171A20" : "#F5F6F8"));
-        Resources["CardBrush"] = new SolidColorBrush((Color)ColorConverter.ConvertFromString(darkMode ? "#20252D" : "#FFFFFF"));
-        Resources["InkBrush"] = new SolidColorBrush((Color)ColorConverter.ConvertFromString(darkMode ? "#E6E9EE" : "#242424"));
-        Resources["HintBrush"] = new SolidColorBrush((Color)ColorConverter.ConvertFromString(darkMode ? "#AEB7C3" : "#707782"));
+        RequestedThemeVariant = ActualThemeVariant == ThemeVariant.Dark ? ThemeVariant.Light : ThemeVariant.Dark;
     }
 
-    private void OnClosing(object? sender, CancelEventArgs e)
+    private async void OnClosing(object? sender, WindowClosingEventArgs e)
     {
-        if (!unsaved && !draftChanged && editIndex is null) return;
-        e.Cancel = MessageBox.Show(this, "There are unsaved changes. Close and discard them?",
-            "Unsaved changes", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes;
+        if (allowClose || (!unsaved && !draftChanged && editIndex is null)) return;
+        e.Cancel = true;
+        if (confirmingClose) return;
+        confirmingClose = true;
+        try
+        {
+            var dialog = new Window
+            {
+                Title = "Unsaved changes", Width = 420, SizeToContent = SizeToContent.Height,
+                CanResize = false, WindowStartupLocation = WindowStartupLocation.CenterOwner
+            };
+            var keep = new Button { Content = "Keep editing", IsCancel = true };
+            var discard = new Button { Content = "Discard and close" };
+            keep.Click += (_, _) => dialog.Close(false);
+            discard.Click += (_, _) => dialog.Close(true);
+            dialog.Content = new StackPanel
+            {
+                Margin = new Thickness(24), Spacing = 20,
+                Children =
+                {
+                    new TextBlock { Text = "There are unsaved changes. Close and discard them?", TextWrapping = TextWrapping.Wrap },
+                    new StackPanel { Orientation = Orientation.Horizontal, Spacing = 12, Children = { keep, discard } }
+                }
+            };
+            if (await dialog.ShowDialog<bool>(this))
+            {
+                allowClose = true;
+                Close();
+            }
+        }
+        finally { confirmingClose = false; }
     }
 }

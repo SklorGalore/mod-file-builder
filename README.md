@@ -1,41 +1,53 @@
 # Case modification builder
 
-A .NET 10 Blazor Server application with Microsoft Fluent UI 5 components and a responsive Fluent-style equipment editor. Generates PSS®E Python (`.py`) or batch (`.idv`, containing `BAT_` commands) files.
+A .NET 10 desktop case modification builder: Avalonia UI for macOS and native WPF for Windows. Both applications share equipment validation and export generation. Generates PSS®E Python (`.py`) and batch (`.idv`, containing `BAT_` commands) files. The web application has been removed; neither desktop application requires a browser, WebView2, or a local web server.
 
-## Run
+## macOS
 
-Install the .NET 10 SDK, then run:
-
-```sh
-dotnet run --project src/ModFileBuilder.Web --urls http://localhost:5080
-```
-
-Open http://localhost:5080. Choose a format, enter equipment data, add modifications, review/edit/reorder the list, and download the file. Download contains only saved list entries. Session data is lost on refresh or server restart; download before leaving.
-
-## Windows desktop
-
-On Windows, run `dotnet run --project src/ModFileBuilder.Windows`. The desktop window hosts the same builder in WebView2, starts and stops its local service with the window, and uses the Windows 11 Desktop Acrylic backdrop. Windows 11 build 22621 or later supplies Acrylic; earlier Windows versions open the same desktop app without the system backdrop. The WebView2 Evergreen Runtime must be installed.
-
-To publish a self-contained Windows desktop folder, publish the web service first, then the desktop shell into the same output directory:
+With the .NET 10 SDK installed:
 
 ```sh
-dotnet publish src/ModFileBuilder.Web -c Release -r win-x64 --self-contained true -o ./publish/windows
-dotnet publish src/ModFileBuilder.Windows -c Release -r win-x64 --self-contained true -o ./publish/windows
+dotnet run --project src/ModFileBuilder.Mac
 ```
 
-Run `ModFileBuilder.Windows.exe`. Keep `ModFileBuilder.Web.exe` and its published files beside it; the desktop shell starts that local service automatically.
-
-## Publish a self-contained app
-
-To distribute a runnable copy without requiring the .NET runtime to be installed on the target machine, publish for that machine's operating system and CPU architecture. For example:
+To build a standalone `.app` including .NET and Avalonia dependencies, run on a Mac:
 
 ```sh
-dotnet publish src/ModFileBuilder.Web -c Release -r win-x64 --self-contained true -o ./publish/win-x64
-dotnet publish src/ModFileBuilder.Web -c Release -r linux-x64 --self-contained true -o ./publish/linux-x64
-dotnet publish src/ModFileBuilder.Web -c Release -r osx-arm64 --self-contained true -o ./publish/osx-arm64
+bash scripts/publish-mac.sh
 ```
 
-Share the contents of the matching `publish/<runtime>` folder. On Windows, run `ModFileBuilder.Web.exe`; on Linux or macOS, run `./ModFileBuilder.Web`. The app starts as a web server. Recipients open its displayed URL in a browser. To let other computers reach it, configure the app to listen on a reachable network address and allow that port through the host firewall. Publish a separate folder for every target platform and architecture.
+The script selects the current Mac's architecture and creates `publish/osx-arm64/Case Modification Builder.app` on Apple Silicon, or `publish/osx-x64/Case Modification Builder.app` on Intel. Double-click the app in Finder or copy it to Applications. Recipients do not need a separately installed .NET runtime. The bundle targets macOS 14 or later.
+
+You can explicitly choose an architecture:
+
+```sh
+bash scripts/publish-mac.sh osx-arm64
+bash scripts/publish-mac.sh osx-x64
+```
+
+The script applies an ad-hoc signature for local use. Distribution to other users requires your Developer ID signing and Apple notarization for normal Gatekeeper acceptance; this script does not notarize. See [Avalonia's macOS distribution guide](https://docs.avaloniaui.net/docs/deployment/macos) for signing and notarization. Builds are separate for Apple Silicon and Intel.
+
+## Windows
+
+With the .NET 10 SDK installed on Windows:
+
+```powershell
+dotnet run --project src/ModFileBuilder.Windows
+```
+
+To build a standalone desktop folder with .NET dependencies included:
+
+```powershell
+dotnet publish src/ModFileBuilder.Windows -c Release -r win-x64 --self-contained true -o ./publish/windows-native
+```
+
+Copy the entire output folder and run `ModFileBuilder.Windows.exe`. Use a fresh folder rather than an older web-host package.
+
+## Using the builder
+
+Choose Python or IDV, select equipment, fill in its identifiers and desired changes, and add it to the modification list. Select list entries to edit, remove, or reorder them. Preview reflects saved list entries; save or cancel an active edit before exporting through the native Save As dialog. Entries stay in memory for the session; generated files are exports, not reloadable project files. Both apps prompt before closing with unsaved changes and offer light/dark themes.
+
+Each entry has its own Python error policy: raise an exception, print a console warning and continue, or ignore errors. Status choices are On-Line and Out-Of-Service, exported as 1 and 0. Empty fields show default placeholders without overriding existing data. PSS®E is needed only when executing the generated files.
 
 ## Supported equipment
 
@@ -43,25 +55,26 @@ Bus (`bus_data_4`), non-transformer branch (`branch_data_3`), load (`load_data_6
 
 The mappings follow [the PSS®E API reference](docs/reference/psse_api.md). Optional blank fields use Python default sentinels or empty batch positions. Default behavior is API-specific: existing values are retained where supported, while new equipment receives PSS®E defaults. This is an add/modify workflow, not an equipment deletion tool. Numeric fields accept invariant decimal points and scientific notation; text is limited to printable ASCII without single quotes for batch compatibility.
 
-Run exports in a PSS®E version supporting these APIs with a case already loaded. Python output lets you choose whether to include the `psspy` import, nonzero `ierr` checks, and default-variable definitions; all three are enabled by default. If an option is disabled, the file expects the corresponding names or behavior to be provided by its caller. Python exports do not initialize PSS®E, load/save a case, create generator plants, or solve a power flow. Add prerequisite buses/plants first. IDV is a PSS®E batch file, not a Windows shell `.bat` file; generated commands have no spaces after commas.
+Run exports in a PSS®E version supporting these APIs with a case already loaded. Python output lets you choose whether to include the psspy import and default-variable definitions; both are enabled by default. Each entry independently handles nonzero ierr results by raising an exception (the default), printing a warning to the console and continuing, or ignoring errors. If import or default definitions are disabled, the caller must provide those names. Status selectors display On-Line and Out-Of-Service and export 1 and 0. Empty inputs show defaults as placeholder text; optional blanks still export API defaults, while blank node numbers and equipment IDs use the builder defaults 0 and 1. Python exports do not initialize PSS®E, load/save a case, create generator plants, or solve a power flow. Add prerequisite buses/plants first. IDV is a PSS®E batch file, not a Windows shell `.bat` file; generated commands have no spaces after commas.
 
 ## Verification
 
 ```sh
-dotnet build src/ModFileBuilder.Web
+dotnet build ModFileBuilder.slnx -m:1
 dotnet run --project tests/ModFileBuilder.Checks
+dotnet run --project tests/ModFileBuilder.Mac.Checks
 ```
 
-The dependency-free check runner verifies parameter positions, defaults, formatting under a non-English culture, input rejection, queue copy isolation, and export order. Actual execution requires a licensed PSS®E installation and has not been validated here.
+The headless Avalonia checks exercise validation, placeholders, status selection, editing/canceling, queue order, format switching, and per-entry policies without opening a desktop window. The core check runner covers parameter positions, defaults, formatting under a non-English culture, input rejection, queue copy isolation, export order, and per-entry error handling. Windows UI execution requires Windows; macOS UI execution requires macOS. Actual PSS®E execution requires a licensed installation and has not been validated here.
 
 ## Repository layout
 
-This is one Git repository because the web and Windows apps share the same core library and are developed and released together. The solution is divided into these modules:
+- `src/ModFileBuilder.Core`: shared equipment schemas, validation, and export generation.
+- `src/ModFileBuilder.Mac`: Avalonia desktop application and macOS bundle metadata.
+- `src/ModFileBuilder.Windows`: native WPF desktop application.
+- `scripts/publish-mac.sh`: self-contained macOS app packaging.
+- `tests/ModFileBuilder.Checks`: checks for the core module.
+- `tests/ModFileBuilder.Mac.Checks`: headless Avalonia editor checks.
+- `docs/reference`: API mapping reference.
 
-- `src/ModFileBuilder.Core`: equipment schemas, validation, and export generation.
-- `src/ModFileBuilder.Web`: the Blazor web app and UI.
-- `src/ModFileBuilder.Windows`: the Windows WebView2 desktop host for the web app.
-- `tests/ModFileBuilder.Checks`: dependency-free checks for the core module.
-- `docs/reference`: the API mapping reference used by the project.
-
-Local PSS®E case files and the vendor PDF can be kept in `_ref/`; Git ignores those files. No case files or reference datasets are served by the app. Run locally; remote multi-user deployment needs authentication and hosting configuration.
+Local PSS®E case files and the vendor PDF can be kept in `_ref/`; Git ignores those files.

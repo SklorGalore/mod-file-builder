@@ -1,20 +1,15 @@
-<Window x:Class="ModFileBuilder.Windows.MainWindow"
-        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+<Window x:Class="ModFileBuilder.Mac.MainWindow"
+        xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Case modification builder" Width="1440" Height="960" MinWidth="900" MinHeight="640"
-        Background="{DynamicResource PageBrush}" Foreground="{DynamicResource InkBrush}" Closing="OnClosing">
-    <Window.Resources>
-        <SolidColorBrush x:Key="PageBrush" Color="#F5F6F8" />
-        <SolidColorBrush x:Key="CardBrush" Color="White" />
-        <SolidColorBrush x:Key="InkBrush" Color="#242424" />
-        <SolidColorBrush x:Key="HintBrush" Color="#707782" />
-        <Style TargetType="TextBlock"><Setter Property="Foreground" Value="{DynamicResource InkBrush}" /></Style>
-        <Style TargetType="Button"><Setter Property="Padding" Value="12,7" /><Setter Property="Margin" Value="0,0,8,0" /></Style>
-        <Style TargetType="TextBox"><Setter Property="Padding" Value="8,6" /><Setter Property="VerticalContentAlignment" Value="Center" /></Style>
-        <Style TargetType="ComboBox"><Setter Property="Padding" Value="8,6" /><Setter Property="MinHeight" Value="32" /></Style>
-        <Style TargetType="CheckBox"><Setter Property="Margin" Value="0,8,16,8" /><Setter Property="Foreground" Value="{DynamicResource InkBrush}" /></Style>
-        <Style x:Key="Card" TargetType="Border"><Setter Property="Background" Value="{DynamicResource CardBrush}" /><Setter Property="CornerRadius" Value="8" /><Setter Property="Padding" Value="20" /></Style>
-    </Window.Resources>
+        Closing="OnClosing">
+    <Window.Styles>
+        <Style Selector="Button"><Setter Property="Padding" Value="12,7" /><Setter Property="Margin" Value="0,0,8,0" /></Style>
+        <Style Selector="TextBox"><Setter Property="Padding" Value="8,6" /></Style>
+        <Style Selector="ComboBox"><Setter Property="HorizontalAlignment" Value="Stretch" /><Setter Property="MinHeight" Value="32" /></Style>
+        <Style Selector="CheckBox"><Setter Property="Margin" Value="0,8,16,8" /></Style>
+        <Style Selector="Border.card"><Setter Property="Background" Value="{DynamicResource SystemControlBackgroundAltHighBrush}" /><Setter Property="CornerRadius" Value="8" /><Setter Property="Padding" Value="20" /></Style>
+    </Window.Styles>
     <DockPanel Margin="24">
         <TextBlock x:Name="StatusText" DockPanel.Dock="Bottom" Margin="0,14,0,0" Text="Add equipment and save the generated file before closing." TextWrapping="Wrap" />
         <StackPanel DockPanel.Dock="Top">
@@ -22,7 +17,7 @@
                 <Button DockPanel.Dock="Right" Content="Toggle theme" Click="ToggleTheme" />
                 <TextBlock Text="Case modification builder" FontSize="26" FontWeight="SemiBold" />
             </DockPanel>
-            <Border Style="{StaticResource Card}" Margin="0,0,0,20">
+            <Border Classes="card" Margin="0,0,0,20">
                 <DockPanel>
                     <Button x:Name="ExportButton" DockPanel.Dock="Right" Content="Save file…" Click="ExportFile" VerticalAlignment="Center" />
                     <StackPanel>
@@ -40,7 +35,7 @@
         </StackPanel>
         <Grid>
             <Grid.ColumnDefinitions><ColumnDefinition Width="5*" MinWidth="330" /><ColumnDefinition Width="20" /><ColumnDefinition Width="6*" MinWidth="380" /></Grid.ColumnDefinitions>
-            <Border Style="{StaticResource Card}">
+            <Border Classes="card">
                 <DockPanel>
                     <StackPanel DockPanel.Dock="Bottom" Margin="0,14,0,0">
                         <TextBlock x:Name="ValidationText" Foreground="#C42B1C" TextWrapping="Wrap" Margin="0,0,0,10" />
@@ -53,9 +48,9 @@
                         <StackPanel>
                             <TextBlock x:Name="EditorTitle" Text="Add equipment" FontSize="18" FontWeight="SemiBold" Margin="0,0,0,16" />
                             <TextBlock Text="Equipment type" Margin="0,0,0,6" />
-                            <ComboBox x:Name="EquipmentSelector" DisplayMemberPath="Name" SelectedValuePath="Key" SelectionChanged="ChangeEquipment" />
+                            <ComboBox x:Name="EquipmentSelector" SelectionChanged="ChangeEquipment" />
                             <TextBlock x:Name="DescriptionText" TextWrapping="Wrap" Margin="0,12,0,8" />
-                            <TextBlock Text="* Required. Placeholders show defaults for new equipment. Blank optional fields use PSS®E defaults and retain existing data where supported. Blank node and ID use 0 and 1." TextWrapping="Wrap" Foreground="{DynamicResource HintBrush}" FontSize="12" />
+                            <TextBlock Text="* Required. Placeholders show defaults for new equipment. Blank optional fields use PSS®E defaults and retain existing data where supported. Blank node and ID use 0 and 1." TextWrapping="Wrap" Opacity="0.7" FontSize="12" />
                             <StackPanel x:Name="FieldsPanel" />
                             <StackPanel x:Name="EntryPythonOptions" Margin="0,16,0,0">
                                 <TextBlock Text="On API error (this entry)" Margin="0,0,0,6" />
@@ -71,27 +66,27 @@
             </Border>
             <Grid Grid.Column="2">
                 <Grid.RowDefinitions><RowDefinition Height="*" /><RowDefinition Height="20" /><RowDefinition Height="*" /></Grid.RowDefinitions>
-                <Border Style="{StaticResource Card}">
+                <Border Classes="card">
                     <DockPanel>
                         <StackPanel DockPanel.Dock="Top">
                             <TextBlock x:Name="QueueTitle" Text="Modification list" FontSize="18" FontWeight="SemiBold" />
                             <TextBlock Text="Commands run from top to bottom. Add buses before connected equipment." TextWrapping="Wrap" Margin="0,10,0,12" />
                         </StackPanel>
                         <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Margin="0,12,0,0">
-                            <Button x:Name="UpButton" Content="↑" ToolTip="Move selected entry up" Click="MoveUp" />
-                            <Button x:Name="DownButton" Content="↓" ToolTip="Move selected entry down" Click="MoveDown" />
+                            <Button x:Name="UpButton" Content="↑" ToolTip.Tip="Move selected entry up" Click="MoveUp" />
+                            <Button x:Name="DownButton" Content="↓" ToolTip.Tip="Move selected entry down" Click="MoveDown" />
                             <Button x:Name="EditButton" Content="Edit" Click="EditEntry" />
                             <Button x:Name="RemoveButton" Content="Remove" Click="RemoveEntry" />
                         </StackPanel>
                         <ListBox x:Name="EntryList" SelectionChanged="SelectionChanged" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
-                            <ListBox.ItemTemplate><DataTemplate><StackPanel Margin="6"><TextBlock Text="{Binding Summary}" Foreground="#242424" FontWeight="SemiBold" /><TextBlock Text="{Binding Type.Api}" Foreground="#707782" FontSize="11" /></StackPanel></DataTemplate></ListBox.ItemTemplate>
+                            <ListBox.ItemTemplate><DataTemplate><StackPanel Margin="6"><TextBlock Text="{Binding Summary}" FontWeight="SemiBold" /><TextBlock Text="{Binding Type.Api}" Opacity="0.7" FontSize="11" /></StackPanel></DataTemplate></ListBox.ItemTemplate>
                         </ListBox>
                     </DockPanel>
                 </Border>
-                <Border Grid.Row="2" Style="{StaticResource Card}">
+                <Border Grid.Row="2" Classes="card">
                     <DockPanel>
                         <TextBlock Text="File preview" DockPanel.Dock="Top" FontSize="18" FontWeight="SemiBold" Margin="0,0,0,12" />
-                        <TextBox x:Name="PreviewText" IsReadOnly="True" FontFamily="Consolas" FontSize="12" AcceptsReturn="True" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" />
+                        <TextBox x:Name="PreviewText" IsReadOnly="True" FontFamily="Menlo, monospace" FontSize="12" AcceptsReturn="True" ScrollViewer.HorizontalScrollBarVisibility="Auto" ScrollViewer.VerticalScrollBarVisibility="Auto" />
                     </DockPanel>
                 </Border>
             </Grid>

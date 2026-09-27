@@ -6,3 +6,9 @@
 # Local PSS/E cases and vendor reference material
 _ref/*.RAW
 _ref/API.pdf
+
+# Generated desktop packages
+publish/
+
+# Local Windows installation media
+/_windows/

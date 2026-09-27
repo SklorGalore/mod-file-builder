@@ -1,6 +1,7 @@
 <Solution>
   <Project Path="tests/ModFileBuilder.Checks/ModFileBuilder.Checks.csproj" />
   <Project Path="src/ModFileBuilder.Core/ModFileBuilder.Core.csproj" />
-  <Project Path="src/ModFileBuilder.Web/ModFileBuilder.Web.csproj" />
+  <Project Path="src/ModFileBuilder.Mac/ModFileBuilder.Mac.csproj" />
   <Project Path="src/ModFileBuilder.Windows/ModFileBuilder.Windows.csproj" />
+  <Project Path="tests/ModFileBuilder.Mac.Checks/ModFileBuilder.Mac.Checks.csproj" />
 </Solution>

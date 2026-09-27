@@ -6,8 +6,12 @@
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <StartupObject>ModFileBuilder.Windows.App</StartupObject>
   </PropertyGroup>
   <ItemGroup>
+    <ApplicationDefinition Remove="App.xaml" />
+    <Page Include="App.xaml" />
     <ProjectReference Include="../ModFileBuilder.Core/ModFileBuilder.Core.csproj" />
+    <PackageReference Include="Velopack" Version="1.2.158" />
   </ItemGroup>
 </Project>

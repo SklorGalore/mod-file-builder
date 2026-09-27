@@ -31,6 +31,3 @@ jobs:
 
       - name: Run core checks
         run: dotnet run --configuration Release --no-build --project tests/ModFileBuilder.Checks
-
-      - name: Run macOS UI checks (headless)
-        run: dotnet run --configuration Release --no-build --project tests/ModFileBuilder.Mac.Checks

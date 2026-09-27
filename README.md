@@ -1,31 +1,6 @@
 # Case modification builder
 
-A .NET 10 desktop case modification builder: Avalonia UI for macOS and native WPF for Windows. Both applications share equipment validation and export generation. Generates PSS®E Python (`.py`) and batch (`.idv`, containing `BAT_` commands) files. The web application has been removed; neither desktop application requires a browser, WebView2, or a local web server.
-
-## macOS
-
-With the .NET 10 SDK installed:
-
-```sh
-dotnet run --project src/ModFileBuilder.Mac
-```
-
-To build a standalone `.app` including .NET and Avalonia dependencies, run on a Mac:
-
-```sh
-bash scripts/publish-mac.sh
-```
-
-The script selects the current Mac's architecture and creates `publish/osx-arm64/Case Modification Builder.app` on Apple Silicon, or `publish/osx-x64/Case Modification Builder.app` on Intel. Double-click the app in Finder or copy it to Applications. Recipients do not need a separately installed .NET runtime. The bundle targets macOS 14 or later.
-
-You can explicitly choose an architecture:
-
-```sh
-bash scripts/publish-mac.sh osx-arm64
-bash scripts/publish-mac.sh osx-x64
-```
-
-The script applies an ad-hoc signature for local use. Distribution to other users requires your Developer ID signing and Apple notarization for normal Gatekeeper acceptance; this script does not notarize. See [Avalonia's macOS distribution guide](https://docs.avaloniaui.net/docs/deployment/macos) for signing and notarization. Builds are separate for Apple Silicon and Intel.
+A .NET 10 desktop case modification builder with a native WPF interface for Windows. It generates PSS®E Python (`.py`) and batch (`.idv`, containing `BAT_` commands) files. The web application has been removed; the desktop application does not require a browser, WebView2, or a local web server.
 
 ## Windows
 
@@ -45,7 +20,7 @@ Copy the entire output folder and run `ModFileBuilder.Windows.exe`. Use a fresh 
 
 ## Using the builder
 
-Choose Python or IDV, select equipment, fill in its identifiers and desired changes, and add it to the modification list. Select list entries to edit, remove, or reorder them. Preview reflects saved list entries; save or cancel an active edit before exporting through the native Save As dialog. Entries stay in memory for the session; generated files are exports, not reloadable project files. Both apps prompt before closing with unsaved changes and offer light/dark themes.
+Choose Python or IDV, select equipment, fill in its identifiers and desired changes, and add it to the modification list. Select list entries to edit, remove, or reorder them. Preview reflects saved list entries; save or cancel an active edit before exporting through the native Save As dialog. Entries stay in memory for the session; generated files are exports, not reloadable project files. The app prompts before closing with unsaved changes and offers light/dark themes.
 
 Each entry has its own Python error policy: raise an exception, print a console warning and continue, or ignore errors. Status choices are On-Line and Out-Of-Service, exported as 1 and 0. Empty fields show default placeholders without overriding existing data. PSS®E is needed only when executing the generated files.
 
@@ -62,23 +37,21 @@ Run exports in a PSS®E version supporting these APIs with a case already loaded
 ```sh
 dotnet build ModFileBuilder.slnx -m:1
 dotnet run --project tests/ModFileBuilder.Checks
-dotnet run --project tests/ModFileBuilder.Mac.Checks
 ```
 
-The headless Avalonia checks exercise validation, placeholders, status selection, editing/canceling, queue order, format switching, and per-entry policies without opening a desktop window. The core check runner covers parameter positions, defaults, formatting under a non-English culture, input rejection, queue copy isolation, export order, and per-entry error handling. Windows UI execution requires Windows; macOS UI execution requires macOS. Actual PSS®E execution requires a licensed installation and has not been validated here.
+The core check runner covers parameter positions, defaults, formatting under a non-English culture, input rejection, queue copy isolation, export order, and per-entry error handling. Windows UI execution requires Windows. Actual PSS®E execution requires a licensed installation and has not been validated here.
 
 ## GitHub Actions
 
-Pull requests and pushes to `main` build the solution and run both check runners. Push a version tag such as `v1.0.0` to create a GitHub Release with self-contained downloads for Windows x64, macOS Apple Silicon, and macOS Intel. The same release workflow can be run manually for an existing tag from the Actions tab.
+Windows releases include a self-contained Velopack installer and update feed. The app checks for updates at startup and offers to restart after downloading one.
+
+Pull requests and pushes to `main` build the solution and run the core check runner. Push a version tag such as `v1.0.0` to create a GitHub Release with Velopack packages for Windows x64. The same release workflow can be run manually for an existing tag from the Actions tab.
 
 ## Repository layout
 
 - `src/ModFileBuilder.Core`: shared equipment schemas, validation, and export generation.
-- `src/ModFileBuilder.Mac`: Avalonia desktop application and macOS bundle metadata.
 - `src/ModFileBuilder.Windows`: native WPF desktop application.
-- `scripts/publish-mac.sh`: self-contained macOS app packaging.
 - `tests/ModFileBuilder.Checks`: checks for the core module.
-- `tests/ModFileBuilder.Mac.Checks`: headless Avalonia editor checks.
 - `docs/reference`: API mapping reference.
 
 Local PSS®E case files and the vendor PDF can be kept in `_ref/`; Git ignores those files.

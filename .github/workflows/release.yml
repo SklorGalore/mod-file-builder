@@ -16,8 +16,8 @@ permissions:
 
 jobs:
   windows:
-    name: Package Windows x64
-    runs-on: windows-latest
+    name: Package Windows x64 with Velopack
+    runs-on: windows-2025
     steps:
       - name: Check out source
         uses: actions/checkout@v4
@@ -32,57 +32,27 @@ jobs:
       - name: Publish self-contained app
         run: dotnet publish src/ModFileBuilder.Windows/ModFileBuilder.Windows.csproj --configuration Release --runtime win-x64 --self-contained true --output publish/windows-x64
 
-      - name: Create archive
-        run: Compress-Archive -Path publish/windows-x64/* -DestinationPath case-modification-builder-windows-x64.zip
-        shell: pwsh
+      - name: Install Velopack CLI
+        run: dotnet tool install vpk --tool-path .tools --version 1.2.158
+
+      - name: Package installer and updates
+        env:
+          RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
+        run: |
+          $version = $env:RELEASE_TAG -replace '^v', ''
+          ./.tools/vpk.exe pack --packId SklorGalore.ModFileBuilder.Windows --packVersion $version --packDir publish/windows-x64 --mainExe ModFileBuilder.Windows.exe --packTitle "Case Modification Builder" --packAuthors "SklorGalore" --shortcuts StartMenuRoot,Desktop --outputDir publish/velopack
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       - name: Upload release asset
         uses: actions/upload-artifact@v4
         with:
-          name: windows-x64
-          path: case-modification-builder-windows-x64.zip
-          if-no-files-found: error
-
-  macos:
-    name: Package macOS ${{ matrix.arch }}
-    runs-on: ${{ matrix.runner }}
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - arch: arm64
-            runtime: osx-arm64
-            runner: macos-15
-          - arch: x64
-            runtime: osx-x64
-            runner: macos-15-intel
-    steps:
-      - name: Check out source
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ inputs.tag || github.ref }}
-
-      - name: Set up .NET 10
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: 10.0.x
-
-      - name: Publish signed app bundle
-        run: bash scripts/publish-mac.sh ${{ matrix.runtime }}
-
-      - name: Create archive
-        run: ditto -c -k --sequesterRsrc --keepParent "publish/${{ matrix.runtime }}/Case Modification Builder.app" "case-modification-builder-macos-${{ matrix.arch }}.zip"
-
-      - name: Upload release asset
-        uses: actions/upload-artifact@v4
-        with:
-          name: macos-${{ matrix.arch }}
-          path: case-modification-builder-macos-${{ matrix.arch }}.zip
+          name: windows-x64-velopack
+          path: publish/velopack/*
           if-no-files-found: error
 
   publish:
     name: Create GitHub release
-    needs: [windows, macos]
+    needs: windows
     runs-on: ubuntu-latest
     permissions:
       contents: write
